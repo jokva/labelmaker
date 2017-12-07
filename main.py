@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import argparse
-import math
 import numpy as np
 import segyio
 import sys
@@ -12,14 +11,17 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib import patches
 from matplotlib.lines import Line2D
+from utility import within_tolerance, closest, axis_lengths
 
 class polybuilder(object):
-    def __init__(self, control, ax):
+    def __init__(self, control, ax, threshold):
         self.x = list(control.get_xdata())
         self.y = list(control.get_ydata())
         self.canvas = control.figure.canvas
         self.control = control
         self.ax = ax
+        self.threshold = threshold
+        self.current_point = None
 
         self.polys = []
         self.last_removed = None
@@ -37,6 +39,8 @@ class polybuilder(object):
 
     def onrelease(self, event):
         if self.pick is not None:
+            if self.current_point:
+                self.move_point(event.xdata, event.ydata)
             self.pick = None
             return
 
@@ -71,7 +75,6 @@ class polybuilder(object):
             self.polys.remove(poly)
 
     def undo(self, *_ ):
-        # TODO: undo last added dot
         if self.last_removed is None: return
         if len(self.polys) > 0 and self.polys[-1] is self.last_removed: return
         self.polys.append(self.last_removed)
@@ -86,6 +89,24 @@ class polybuilder(object):
     def onpick(self, event):
         if event.artist is not self.control: return
         self.pick = 1
+        xp, yp = event.mouseevent.xdata, event.mouseevent.ydata
+        xdata, ydata = self.control.get_data()
+
+        dx, dy = axis_lengths(self.control.axes)
+        idx, distance = closest(xp, yp, xdata, ydata, dx, dy)
+
+        if within_tolerance(distance, dx, dy, self.threshold):
+            self.current_point = (xdata[idx], ydata[idx], idx)
+
+    def move_point(self, xp, yp):
+        _, _, idx = self.current_point
+
+        self.x[idx] = xp
+        self.y[idx] = yp
+
+        self.control.set_data(self.x, self.y)
+        self.canvas.draw()
+        self.current_point = None
 
 def main(argv):
     parser = argparse.ArgumentParser(prog = argv[0],
@@ -103,7 +124,7 @@ def main(argv):
         line = Line2D([], [], ls='--', c='#666666',
                       marker='x', mew=2, mec='#204a87', picker = 5)
         ax.add_line(line)
-        pb = polybuilder(line, ax)
+        pb = polybuilder(line, ax, threshold=0.01)
 
         plt.show()
 
