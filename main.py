@@ -35,6 +35,7 @@ class polybuilder(object):
                         'enter': self.mkpoly,
                         'd': self.rmpoly,
                         'u': self.undo,
+                        'z': self.undo_dot
                     }
 
     def onrelease(self, event):
@@ -79,6 +80,14 @@ class polybuilder(object):
         if len(self.polys) > 0 and self.polys[-1] is self.last_removed: return
         self.polys.append(self.last_removed)
         self.ax.add_patch(self.last_removed)
+
+    def undo_dot(self, *_):
+        if len(self.x) == 0: return
+        self.x.pop()
+        self.y.pop()
+
+        self.control.set_data(self.x, self.y)
+        self.canvas.draw()
 
     def complete(self, event):
         if event.key not in self.keys: return
