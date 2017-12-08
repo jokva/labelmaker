@@ -105,8 +105,8 @@ def main(argv):
         ax.add_line(line)
         pb = polybuilder(line, ax)
 
-        output = np.zeros(traces.shape)
-        py, px = np.mgrid[0:traces.shape[0], 0:traces.shape[1]]
+        output = np.zeros(traces.shape, dtype = np.single)
+        px, py = np.mgrid[0:traces.shape[0], 0:traces.shape[1]]
         points = np.c_[py.ravel(), px.ravel()]
 
         plt.show()
@@ -114,6 +114,17 @@ def main(argv):
         for poly in pb.polys:
             mask = poly.get_path().contains_points(points)
             np.place(output, mask, [1])
+
+        meta = segyio.tools.metadata(f)
+        with segyio.create('labelmade-' + args.input, meta) as out:
+            out.text[0] = f.text[0]
+
+            for i in range(1, 1 + f.ext_headers):
+                out.text[i] = f.text[i]
+
+            out.bin = f.bin
+            out.header = f.header
+            out.trace = output
 
 if __name__ == '__main__':
     main(sys.argv)
