@@ -105,7 +105,15 @@ def main(argv):
         ax.add_line(line)
         pb = polybuilder(line, ax)
 
+        output = np.zeros(traces.shape)
+        py, px = np.mgrid[0:traces.shape[0], 0:traces.shape[1]]
+        points = np.c_[py.ravel(), px.ravel()]
+
         plt.show()
+
+        for poly in pb.polys:
+            mask = poly.get_path().contains_points(points)
+            np.place(output, mask, [1])
 
 if __name__ == '__main__':
     main(sys.argv)
