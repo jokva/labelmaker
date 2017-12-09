@@ -193,16 +193,27 @@ def main(argv):
     parser = argparse.ArgumentParser(prog = argv[0],
                                      description='Labelmaker - open segyiofile, '
                                                  'mark areas interactively and export the result')
-    parser.add_argument('input', type=str,
-                                 help='Input file')
-    parser.add_argument('--threshold', type=float,
-                                       help='point selection sensitivity',
-                                       default = 0.01)
-    parser.add_argument('--prefix', type=str,
-                                    help='Output file prefix',
-                                    default='labelmade-')
-    parser.add_argument('-d', '--compare', type=str,
-                                           help='Filepath to exported results (for comparing)')
+    parser.add_argument('input',
+                        type=str,
+                        help='Input file')
+
+    parser.add_argument('-t',
+                        '--threshold',
+                        type=float,
+                        help='Point selection sensitivity',
+                        default=0.01)
+
+    parser.add_argument('-p',
+                        '--prefix',
+                        type=str,
+                        help='Output file prefix',
+                        default='labelmade-')
+
+    parser.add_argument('-d',
+                        '--compare',
+                        type=str,
+                        help='Filepath to exported results (for comparing)')
+
     args = parser.parse_args(args = argv[1:])
 
     with segyio.open(args.input) as f:
