@@ -13,6 +13,7 @@ from matplotlib.lines import Line2D
 from utility import within_tolerance, closest, axis_lengths
 
 def export(fname, output, prefix = 'labelmade-'):
+    print(prefix + fname)
     with segyio.open(fname) as f:
         meta = segyio.tools.metadata(f)
         with segyio.create(prefix + fname, meta) as out:
@@ -36,6 +37,7 @@ class plotter(object):
         self.line = None
         self.threshold = args.threshold
         self.traces = traces
+        self.overlaypath = args.compare
 
         self.polys = []
         self.last_removed = None
@@ -62,11 +64,21 @@ class plotter(object):
         self.ax.add_line(self.line)
 
         self.canvas = self.line.figure.canvas
-        self.canvas.mpl_connect('button_release_event', self.onrelease)
-        self.canvas.mpl_connect('key_press_event', self.complete)
-        self.canvas.mpl_connect('pick_event', self.onpick)
+        if self.overlaypath is None:
+            self.canvas.mpl_connect('button_release_event', self.onrelease)
+            self.canvas.mpl_connect('key_press_event', self.complete)
+            self.canvas.mpl_connect('pick_event', self.onpick)
+
+        if self.overlaypath is not None:
+            self.add_overlay()
 
         plt.show()
+
+    def add_overlay(self):
+        with segyio.open(self.overlaypath) as f:
+            traces = f.trace.raw[:]
+
+        self.ax.imshow(traces, aspect='auto', cmap=plt.get_cmap('BuPu'), alpha=0.5)
 
     def onrelease(self, event):
         if self.pick is not None:
@@ -175,15 +187,18 @@ class plotter(object):
 
 def main(argv):
     parser = argparse.ArgumentParser(prog = argv[0],
-                                     description='Label those slices yo')
+                                     description='Labelmaker - open segyiofile, '
+                                                 'mark areas interactively and export the result')
     parser.add_argument('input', type=str,
-                                 help='input file')
+                                 help='Input file')
     parser.add_argument('--threshold', type=float,
                                        help='point selection sensitivity',
                                        default = 0.01)
     parser.add_argument('--prefix', type=str,
                                     help='Output file prefix',
                                     default='Labelmade-')
+    parser.add_argument('-d', '--compare', type=str,
+                                           help='Filepath to exported results (for comparing)')
     args = parser.parse_args(args = argv[1:])
 
     with segyio.open(args.input) as f:
