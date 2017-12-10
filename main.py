@@ -12,17 +12,8 @@ from matplotlib import patches
 from matplotlib.lines import Line2D
 from utility import within_tolerance, closest, axis_lengths
 
-def export(fname, polys, prefix = 'labelmade-'):
+def export(fname, output, prefix = 'labelmade-'):
     with segyio.open(fname) as f:
-        traces, samples = len(f.trace), len(f.trace[0])
-        output = np.zeros(shape, dtype=np.single)
-        px, py = np.mgrid[0:traces, 0:samples]
-        points = np.c_[py.ravel(), px.ravel()]
-
-        for poly in polys:
-            mask = poly.get_path().contains_points(points)
-            np.place(output, mask, [1])
-
         meta = segyio.tools.metadata(f)
         with segyio.create(prefix + fname, meta) as out:
             out.text[0] = f.text[0]
@@ -49,6 +40,8 @@ class plotter(object):
         self.polys = []
         self.last_removed = None
         self.pick = None
+        self.current_poly_class = 0
+        self.cmap = plt.get_cmap('tab10').colors
 
         self.keys = {'escape': self.clear,
                      'enter': self.mkpoly,
@@ -56,7 +49,11 @@ class plotter(object):
                      'u': self.undo,
                      'e': self.export
                      }
+
+        [self.keys.update({str(key): self.set_class}) for key in range(1, 10, 1)]
+
     def run(self):
+
         self.fig, self.ax = plt.subplots()
         self.ax.imshow(self.traces, aspect='auto', cmap=plt.get_cmap('BuPu'))
 
@@ -93,7 +90,9 @@ class plotter(object):
         self.line.set_data(self.x, self.y)
 
     def mkpoly(self, *_):
-        poly = patches.Polygon(list(zip(self.x, self.y)), alpha = 0.5)
+        poly = patches.Polygon(list(zip(self.x, self.y)),
+                               alpha=0.5,
+                               fc=self.cmap[self.current_poly_class])
         self.ax.add_patch(poly)
 
         self.polys.append(poly)
@@ -121,6 +120,11 @@ class plotter(object):
 
         self.line.set_data(self.x, self.y)
         self.canvas.draw()
+
+    def set_class(self, event):
+        for poly in self.polys:
+            if not poly.contains(event)[0]: continue
+            poly.set_facecolor(self.cmap[int(event.key)-1])
 
     def complete(self, event):
         if event.key not in self.keys: return
@@ -151,7 +155,23 @@ class plotter(object):
         self.current_point = None
 
     def export(self, *_):
-        export(self.args.input, self.polys, prefix = self.args.prefix)
+        traces = self.create_output_creates()
+        export(self.args.input, traces, prefix = self.args.prefix)
+
+    def create_output_creates(self):
+        with segyio.open(self.args.input) as f:
+            traces, samples = len(f.trace), len(f.trace[0])
+            output = np.zeros((traces, samples), dtype=np.single)
+            px, py = np.mgrid[0:traces, 0:samples]
+            points = np.c_[py.ravel(), px.ravel()]
+
+            for poly in self.polys:
+                mask = poly.get_path().contains_points(points)
+                color = poly.get_facecolor()
+                value = self.cmap.index((color[0], color[1], color[2])) + 1
+                np.place(output, mask, [value])
+        return output
+
 
 def main(argv):
     parser = argparse.ArgumentParser(prog = argv[0],
@@ -161,6 +181,9 @@ def main(argv):
     parser.add_argument('--threshold', type=float,
                                        help='point selection sensitivity',
                                        default = 0.01)
+    parser.add_argument('--prefix', type=str,
+                                    help='Output file prefix',
+                                    default='Labelmade-')
     args = parser.parse_args(args = argv[1:])
 
     with segyio.open(args.input) as f:
