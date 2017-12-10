@@ -25,6 +25,8 @@ class plotter(object):
         self.polys = []
         self.last_removed = None
         self.pick = None
+        self.current_poly_class = 0
+        self.cmap = plt.get_cmap('tab10').colors
 
         self.keys = {'escape': self.clear,
                      'enter': self.mkpoly,
@@ -32,6 +34,8 @@ class plotter(object):
                      'u': self.undo,
                      'e': self.export
                      }
+
+        [self.keys.update({str(key): self.set_class}) for key in range(1, 10, 1)]
 
         self.plot_segy()
 
@@ -73,7 +77,9 @@ class plotter(object):
         self.line.set_data(self.x, self.y)
 
     def mkpoly(self, *_):
-        poly = patches.Polygon(list(zip(self.x, self.y)), alpha = 0.5)
+        poly = patches.Polygon(list(zip(self.x, self.y)),
+                               alpha=0.5,
+                               fc=self.cmap[self.current_poly_class])
         self.ax.add_patch(poly)
 
         self.polys.append(poly)
@@ -95,6 +101,11 @@ class plotter(object):
         self.polys.append(self.last_removed)
         self.ax.add_patch(self.last_removed)
 
+    def set_class(self, event):
+        for poly in self.polys:
+            if not poly.contains(event)[0]: continue
+            poly.set_facecolor(self.cmap[int(event.key)-1])
+
     def complete(self, event):
         if event.key not in self.keys: return
 
@@ -114,7 +125,9 @@ class plotter(object):
 
             for poly in self.polys:
                 mask = poly.get_path().contains_points(points)
-                np.place(output, mask, [1])
+                color = poly.get_facecolor()
+                value = self.cmap.index((color[0], color[1], color[2]))+1
+                np.place(output, mask, [value])
 
             meta = segyio.tools.metadata(f)
             with segyio.create('labelmade-' + self.fn, meta) as out:
