@@ -12,5 +12,6 @@ setup(name='labelmaker',
       license='LGPL-3.0',
       setup_requires=['pytest-runner'],
       tests_require=['pytest'],
+      test_suite='pytest',
       platforms='any',
       )
