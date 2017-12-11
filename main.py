@@ -12,16 +12,39 @@ from matplotlib import patches
 from matplotlib.lines import Line2D
 from utility import within_tolerance, closest, axis_lengths
 
+def export(fname, polys, prefix = 'labelmade-'):
+    with segyio.open(fname) as f:
+        traces, samples = len(f.trace), len(f.trace[0])
+        output = np.zeros(shape, dtype=np.single)
+        px, py = np.mgrid[0:traces, 0:samples]
+        points = np.c_[py.ravel(), px.ravel()]
+
+        for poly in polys:
+            mask = poly.get_path().contains_points(points)
+            np.place(output, mask, [1])
+
+        meta = segyio.tools.metadata(f)
+        with segyio.create(prefix + fname, meta) as out:
+            out.text[0] = f.text[0]
+
+            for i in range(1, 1 + f.ext_headers):
+                out.text[i] = f.text[i]
+
+            out.bin = f.bin
+            out.header = f.header
+            out.trace = output
+
 class plotter(object):
-    def __init__(self, fn, threshold = 0.01):
-        self.fn = fn
+    def __init__(self, args, traces):
+        self.args = args
         self.x = []
         self.y = []
         self.fig = None
         self.canvas = None
         self.ax = None
         self.line = None
-        self.threshold = threshold
+        self.threshold = args.threshold
+        self.traces = traces
 
         self.polys = []
         self.last_removed = None
@@ -33,15 +56,9 @@ class plotter(object):
                      'u': self.undo,
                      'e': self.export
                      }
-
-        self.plot_segy()
-
-    def plot_segy(self):
-        with segyio.open(self.fn) as f:
-            traces = f.trace.raw[:]
-
+    def run(self):
         self.fig, self.ax = plt.subplots()
-        self.ax.imshow(traces, aspect='auto', cmap=plt.get_cmap('BuPu'))
+        self.ax.imshow(self.traces, aspect='auto', cmap=plt.get_cmap('BuPu'))
 
         self.line = Line2D(self.x, self.y, ls='--', c='#666666',
                       marker='x', mew=2, mec='#204a87', picker=5)
@@ -102,7 +119,7 @@ class plotter(object):
         self.x.pop()
         self.y.pop()
 
-        self.control.set_data(self.x, self.y)
+        self.line.set_data(self.x, self.y)
         self.canvas.draw()
 
     def complete(self, event):
@@ -115,9 +132,9 @@ class plotter(object):
         if event.artist is not self.line: return
         self.pick = 1
         xp, yp = event.mouseevent.xdata, event.mouseevent.ydata
-        xdata, ydata = self.control.get_data()
+        xdata, ydata = self.line.get_data()
 
-        dx, dy = axis_lengths(self.control.axes)
+        dx, dy = axis_lengths(self.line.axes)
         idx, distance = closest(xp, yp, xdata, ydata, dx, dy)
 
         if within_tolerance(distance, dx, dy, self.threshold):
@@ -129,39 +146,28 @@ class plotter(object):
         self.x[idx] = xp
         self.y[idx] = yp
 
-        self.control.set_data(self.x, self.y)
+        self.line.set_data(self.x, self.y)
         self.canvas.draw()
         self.current_point = None
 
     def export(self, *_):
-        with segyio.open(self.fn) as f:
-            traces = f.trace.raw[:]
-            output = np.zeros(traces.shape, dtype=np.single)
-            px, py = np.mgrid[0:traces.shape[0], 0:traces.shape[1]]
-            points = np.c_[py.ravel(), px.ravel()]
-
-            for poly in self.polys:
-                mask = poly.get_path().contains_points(points)
-                np.place(output, mask, [1])
-
-            meta = segyio.tools.metadata(f)
-            with segyio.create('labelmade-' + self.fn, meta) as out:
-                out.text[0] = f.text[0]
-
-                for i in range(1, 1 + f.ext_headers):
-                    out.text[i] = f.text[i]
-
-                out.bin = f.bin
-                out.header = f.header
-                out.trace = output
+        export(self.args.input, self.polys, prefix = self.args.prefix)
 
 def main(argv):
     parser = argparse.ArgumentParser(prog = argv[0],
                                      description='Label those slices yo')
-    parser.add_argument('input', type=str, help='input file')
+    parser.add_argument('input', type=str,
+                                 help='input file')
+    parser.add_argument('--threshold', type=float,
+                                       help='point selection sensitivity',
+                                       default = 0.01)
     args = parser.parse_args(args = argv[1:])
 
-    plotter(args.input)
+    with segyio.open(args.input) as f:
+        traces = f.trace.raw[:]
+
+    runner = plotter(args, traces)
+    runner.run()
 
 if __name__ == '__main__':
     main(sys.argv)
