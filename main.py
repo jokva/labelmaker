@@ -199,7 +199,7 @@ def main(argv):
                                        default = 0.01)
     parser.add_argument('--prefix', type=str,
                                     help='Output file prefix',
-                                    default='Labelmade-')
+                                    default='labelmade-')
     parser.add_argument('-d', '--compare', type=str,
                                            help='Filepath to exported results (for comparing)')
     args = parser.parse_args(args = argv[1:])
