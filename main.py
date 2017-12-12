@@ -149,9 +149,12 @@ class plotter(object):
         self.canvas.draw()
 
     def set_class(self, event):
-        for poly, cls in self.polys.items():
+        cls = int(event.key)
+        self.current_poly_class = cls
+
+        for poly in self.polys.keys():
             if not poly.contains(event)[0]: continue
-            cls = int(event.key)
+            self.polys[poly] = cls
             poly.set_facecolor(self.cmap[cls-1])
 
     def complete(self, event):
