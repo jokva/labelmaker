@@ -103,6 +103,8 @@ class plotter(object):
         self.line.set_data(self.x, self.y)
 
     def mkpoly(self, *_):
+        if len(self.x) == 0: return
+
         poly = patches.Polygon(list(zip(self.x, self.y)),
                                alpha=0.5,
                                fc=self.cmap[self.current_poly_class])
