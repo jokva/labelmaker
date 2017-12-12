@@ -52,7 +52,8 @@ class plotter(object):
                      'e': self.export
                      }
 
-        [self.keys.update({str(key): self.set_class}) for key in range(1, 10, 1)]
+        for key in range(1,10):
+            self.keys[str(key)] = self.set_class
 
     def run(self):
 
