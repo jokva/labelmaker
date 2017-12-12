@@ -26,6 +26,18 @@ def export(fname, output, prefix = 'labelmade-'):
             out.trace = output
     print("Wrote", prefix + fname)
 
+def mkoutput(polys, shape):
+    traces, samples = shape
+    output = np.zeros((traces, samples), dtype=np.single)
+    px, py = np.mgrid[0:traces, 0:samples]
+    points = np.c_[py.ravel(), px.ravel()]
+
+    for poly, cls in polys.items():
+        mask = poly.get_path().contains_points(points)
+        value = cls
+        np.place(output, mask, [value])
+    return output
+
 class plotter(object):
     def __init__(self, args, traces):
         self.args = args
@@ -39,7 +51,7 @@ class plotter(object):
         self.traces = traces
         self.overlaypath = args.compare
 
-        self.polys = []
+        self.polys = {}
         self.last_removed = None
         self.pick = None
         self.current_poly_class = 0
@@ -110,7 +122,7 @@ class plotter(object):
                                fc=self.cmap[self.current_poly_class])
         self.ax.add_patch(poly)
 
-        self.polys.append(poly)
+        self.polys[poly] = self.current_poly_class
         self.clear()
 
     def rmpoly(self, event):
@@ -119,14 +131,14 @@ class plotter(object):
         for poly in self.polys:
             if not poly.contains(event)[0]: continue
             poly.remove()
-            self.last_removed = poly
-            self.polys.remove(poly)
+            self.last_removed = (poly, self.polys.pop(poly))
+            return
 
     def undo(self, *_ ):
         if self.last_removed is None: return
-        if len(self.polys) > 0 and self.polys[-1] is self.last_removed: return
-        self.polys.append(self.last_removed)
-        self.ax.add_patch(self.last_removed)
+        if self.last_removed[0] in self.polys: return
+        self.polys.update([self.last_removed])
+        self.ax.add_patch(self.last_removed[0])
 
     def undo_dot(self, *_):
         if len(self.x) == 0: return
@@ -137,9 +149,10 @@ class plotter(object):
         self.canvas.draw()
 
     def set_class(self, event):
-        for poly in self.polys:
+        for poly, cls in self.polys.items():
             if not poly.contains(event)[0]: continue
-            poly.set_facecolor(self.cmap[int(event.key)-1])
+            cls = int(event.key)
+            poly.set_facecolor(self.cmap[cls-1])
 
     def complete(self, event):
         if event.key not in self.keys: return
@@ -170,23 +183,8 @@ class plotter(object):
         self.current_point = None
 
     def export(self, *_):
-        traces = self.create_output_creates()
-        export(self.args.input, traces, prefix = self.args.prefix)
-
-    def create_output_creates(self):
-        with segyio.open(self.args.input) as f:
-            traces, samples = len(f.trace), len(f.trace[0])
-            output = np.zeros((traces, samples), dtype=np.single)
-            px, py = np.mgrid[0:traces, 0:samples]
-            points = np.c_[py.ravel(), px.ravel()]
-
-            for poly in self.polys:
-                mask = poly.get_path().contains_points(points)
-                color = poly.get_facecolor()
-                value = self.cmap.index((color[0], color[1], color[2])) + 1
-                np.place(output, mask, [value])
-        return output
-
+        data = mkoutput(self.polys, self.traces.shape)
+        export(self.args.input, data, prefix = self.args.prefix)
 
 def main(argv):
     parser = argparse.ArgumentParser(prog = argv[0],
