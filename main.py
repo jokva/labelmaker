@@ -83,12 +83,12 @@ class plotter(object):
             self.canvas.mpl_connect('pick_event', self.onpick)
 
         if self.overlaypath is not None:
-            self.add_overlay()
+            self.add_overlay(self.overlaypath)
 
         plt.show()
 
-    def add_overlay(self):
-        with segyio.open(self.overlaypath) as f:
+    def add_overlay(self, path):
+        with segyio.open(path) as f:
             traces = f.trace.raw[:]
 
         self.ax.imshow(traces, aspect='auto', cmap=plt.get_cmap('BuPu'), alpha=0.5)
