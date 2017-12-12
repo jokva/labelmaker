@@ -119,7 +119,7 @@ class plotter(object):
 
         poly = patches.Polygon(list(zip(self.x, self.y)),
                                alpha=0.5,
-                               fc=self.cmap[self.current_poly_class])
+                               fc=self.cmap[self.current_poly_class-1])
         self.ax.add_patch(poly)
 
         self.polys[poly] = self.current_poly_class
