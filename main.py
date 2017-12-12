@@ -54,7 +54,7 @@ class plotter(object):
         self.polys = {}
         self.last_removed = None
         self.pick = None
-        self.current_poly_class = 0
+        self.current_poly_class = 1
         self.cmap = plt.get_cmap('tab10').colors
 
         self.keys = {'escape': self.clear,
