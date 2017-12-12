@@ -13,7 +13,6 @@ from matplotlib.lines import Line2D
 from utility import within_tolerance, closest, axis_lengths
 
 def export(fname, output, prefix = 'labelmade-'):
-    print(prefix + fname)
     with segyio.open(fname) as f:
         meta = segyio.tools.metadata(f)
         with segyio.create(prefix + fname, meta) as out:
@@ -25,6 +24,7 @@ def export(fname, output, prefix = 'labelmade-'):
             out.bin = f.bin
             out.header = f.header
             out.trace = output
+    print("Wrote", prefix + fname)
 
 class plotter(object):
     def __init__(self, args, traces):
