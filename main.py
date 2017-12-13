@@ -61,7 +61,8 @@ class plotter(object):
                      'enter': self.mkpoly,
                      'd': self.rmpoly,
                      'u': self.undo,
-                     'e': self.export
+                     'e': self.export,
+                     'z': self.undo_dot
                      }
 
         for key in range(1,10):
