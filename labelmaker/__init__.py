@@ -1,0 +1,1 @@
+from .labelmaker import main

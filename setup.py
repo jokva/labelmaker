@@ -3,15 +3,19 @@
 from setuptools import setup
 
 setup(name='labelmaker',
-      description='Simple labeling tool for segyio files',
-      long_description=open('README.md').read(),
-      author='Statoil ASA',
-      author_email='fg_gpl@statoil.com',
-      #url='https://github.com/Statoil/segyviewer',
-      scripts=['main.py'],
-      license='LGPL-3.0',
-      setup_requires=['pytest-runner'],
-      tests_require=['pytest'],
-      test_suite='pytest',
-      platforms='any',
-      )
+    use_scm_version=True,
+    description='Simple labeling tool for segyio files',
+    long_description=open('README.md').read(),
+    author='Statoil ASA',
+    author_email='fg_gpl@statoil.com',
+    entry_points = {
+        'gui_scripts' : [ 'labelmaker = labelmaker:main' ]
+    },
+    packages=['labelmaker'],
+    license='GPL-3.0',
+    setup_requires=['pytest-runner', 'setuptools>=28', 'setuptools_scm'],
+    tests_require=['pytest'],
+    test_suite='pytest',
+    install_requires=['matplotlib', 'segyio==1.4b1'],
+    platforms='any',
+)

@@ -53,3 +53,5 @@ def closest(x, y, xdata, ydata, dx, dy):
 
     min_distance = min(squared)
     return squared.index(min_distance), min_distance
+
+

@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 import argparse
 import numpy as np
@@ -10,7 +10,8 @@ matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from matplotlib import patches
 from matplotlib.lines import Line2D
-from utility import within_tolerance, closest, axis_lengths
+
+from .utility import within_tolerance, axis_lengths, closest
 
 def export(fname, output, prefix = 'labelmade-'):
     with segyio.open(fname) as f:
@@ -190,7 +191,9 @@ class plotter(object):
         data = mkoutput(self.polys, self.traces.shape)
         export(self.args.input, data, prefix = self.args.prefix)
 
-def main(argv):
+def main(argv = None):
+    if argv is None: argv = sys.argv
+
     parser = argparse.ArgumentParser(prog = argv[0],
                                      description='Labelmaker - open segyiofile, '
                                                  'mark areas interactively and export the result')

@@ -10,7 +10,7 @@ matplotlib.use('Qt5Agg')
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from utility import within_tolerance, axis_lengths, closest
+from labelmaker.utility import within_tolerance, axis_lengths, closest
 
 def create_test_plot():
     fig, ax = plt.subplots()
