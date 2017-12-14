@@ -72,7 +72,7 @@ class plotter(object):
     def run(self):
 
         self.fig, self.ax = plt.subplots()
-        self.ax.imshow(self.traces, aspect='auto', cmap=plt.get_cmap('BuPu'))
+        self.ax.imshow(self.traces, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
 
         self.line = Line2D(self.x, self.y, ls='--', c='#666666',
                       marker='x', mew=2, mec='#204a87', picker=5)
@@ -93,7 +93,7 @@ class plotter(object):
         with segyio.open(path) as f:
             traces = f.trace.raw[:]
 
-        self.ax.imshow(traces, aspect='auto', cmap=plt.get_cmap('BuPu'), alpha=0.5)
+        self.ax.imshow(traces, aspect='auto', cmap=plt.get_cmap(self.args.cmap), alpha=0.5)
 
     def onrelease(self, event):
         if self.pick is not None:
@@ -217,6 +217,13 @@ def main(argv = None):
                         '--compare',
                         type=str,
                         help='Filepath to exported results (for comparing)')
+
+    parser.add_argument('-c',
+                        '--cmap',
+                        '--colours',
+                        type=str,
+                        default='seismic',
+                        help='Set colour map')
 
     args = parser.parse_args(args = argv[1:])
 
