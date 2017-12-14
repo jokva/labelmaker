@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import segyio
 import sys
+import os
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,7 +16,8 @@ from .utility import within_tolerance, axis_lengths, closest
 def export(fname, output, prefix = 'labelmade-'):
     with segyio.open(fname) as f:
         meta = segyio.tools.metadata(f)
-        with segyio.create(prefix + fname, meta) as out:
+        output_path = os.path.join(os.getcwd(), prefix + os.path.basename(fname))
+        with segyio.create(output_path, meta) as out:
             out.text[0] = f.text[0]
 
             for i in range(1, 1 + f.ext_headers):
