@@ -155,6 +155,13 @@ class plotter(object):
         cls = int(event.key)
         self.current_poly_class = cls
 
+        # matplotlib uses numerical keys to set what axis has focus for zoom
+        # and navigation emphasis. We always have one axis, and it should
+        # always be navigatable
+        self.ax.set_navigate(True)
+
+        if event.inaxes != self.ax: return
+
         for poly in self.polys.keys():
             if not poly.contains(event)[0]: continue
             self.polys[poly] = cls
