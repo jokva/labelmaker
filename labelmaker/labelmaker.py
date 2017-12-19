@@ -30,15 +30,15 @@ def export(fname, output, prefix = 'labelmade-'):
 
 def mkoutput(polys, shape):
     traces, samples = shape
-    output = np.zeros((traces, samples), dtype=np.single)
-    px, py = np.mgrid[0:traces, 0:samples]
+    output = np.zeros((traces, samples), dtype=np.single).T
+    px, py = np.mgrid[0:samples, 0:traces]
     points = np.c_[py.ravel(), px.ravel()]
 
     for poly, cls in polys.items():
         mask = poly.get_path().contains_points(points)
         value = cls
         np.place(output, mask, [value])
-    return output
+    return output.T
 
 class plotter(object):
     def __init__(self, args, traces):
@@ -73,7 +73,7 @@ class plotter(object):
     def run(self):
 
         self.fig, self.ax = plt.subplots()
-        self.ax.imshow(self.traces, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
+        self.ax.imshow(self.traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
 
         self.line = Line2D(self.x, self.y, ls='--', c='#666666',
                       marker='x', mew=2, mec='#204a87', picker=5)
@@ -94,7 +94,7 @@ class plotter(object):
         with segyio.open(path) as f:
             traces = f.trace.raw[:]
 
-        self.ax.imshow(traces, aspect='auto', cmap=plt.get_cmap(self.args.cmap), alpha=0.5)
+        self.ax.imshow(traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap), alpha=0.5)
 
     def onrelease(self, event):
         if self.pick is not None:
