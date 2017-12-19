@@ -74,6 +74,7 @@ class plotter(object):
 
         self.fig, self.ax = plt.subplots()
         self.ax.imshow(self.traces, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
+        self.background = self.fig.canvas.copy_from_bbox(self.fig.bbox)
 
         self.line = Line2D(self.x, self.y, ls='--', c='#666666',
                       marker='x', mew=2, mec='#204a87', picker=5)
@@ -96,6 +97,18 @@ class plotter(object):
 
         self.ax.imshow(traces, aspect='auto', cmap=plt.get_cmap(self.args.cmap), alpha=0.5)
 
+    def visible(self, x):
+        self.line.set_visible(x)
+        for poly in self.polys.keys():
+            poly.set_visible(x)
+
+    def blit(self):
+        self.fig.canvas.restore_region(self.background)
+        self.ax.draw_artist(self.line)
+        for poly in self.polys.keys():
+            self.ax.draw_artist(poly)
+        self.fig.canvas.blit(self.ax.bbox)
+
     def onrelease(self, event):
         if self.pick is not None:
             if self.current_point:
@@ -111,11 +124,12 @@ class plotter(object):
         self.y.append(event.ydata)
 
         self.line.set_data(self.x, self.y)
-        self.canvas.draw()
+        self.blit()
 
     def clear(self, *_):
         self.x, self.y = [], []
         self.line.set_data(self.x, self.y)
+        self.draw()
 
     def mkpoly(self, *_):
         if len(self.x) == 0: return
@@ -147,9 +161,7 @@ class plotter(object):
         if len(self.x) == 0: return
         self.x.pop()
         self.y.pop()
-
         self.line.set_data(self.x, self.y)
-        self.canvas.draw()
 
     def set_class(self, event):
         cls = int(event.key)
@@ -171,7 +183,7 @@ class plotter(object):
         if event.key not in self.keys: return
 
         self.keys[event.key](event)
-        self.canvas.draw()
+        self.blit()
 
     def onpick(self, event):
         if event.artist is not self.line: return
@@ -192,7 +204,6 @@ class plotter(object):
         self.y[idx] = yp
 
         self.line.set_data(self.x, self.y)
-        self.canvas.draw()
         self.current_point = None
 
     def export(self, *_):
