@@ -74,6 +74,7 @@ class plotter(object):
 
         self.fig, self.ax = plt.subplots()
         self.ax.imshow(self.traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
+        self.fig.canvas.draw()
         self.background = self.fig.canvas.copy_from_bbox(self.fig.bbox)
 
         self.line = Line2D(self.x, self.y, ls='--', c='#666666',
