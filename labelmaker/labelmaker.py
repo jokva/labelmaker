@@ -106,9 +106,12 @@ class plotter(object):
     def blit(self):
         self.fig.canvas.restore_region(self.background)
         self.ax.draw_artist(self.line)
+
         for poly in self.polys.keys():
             self.ax.draw_artist(poly)
+
         self.fig.canvas.blit(self.ax.bbox)
+        self.fig.canvas.flush_events()
 
     def onrelease(self, event):
         if self.pick is not None:
