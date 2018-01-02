@@ -129,7 +129,7 @@ class plotter(object):
     def clear(self, *_):
         self.x, self.y = [], []
         self.line.set_data(self.x, self.y)
-        self.draw()
+        self.canvas.draw()
 
     def mkpoly(self, *_):
         if len(self.x) == 0: return
