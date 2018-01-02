@@ -136,7 +136,7 @@ class plotter(object):
         self.canvas.draw()
 
     def mkpoly(self, *_):
-        if len(self.x) == 0: return
+        if len(self.x) < 3: return
 
         poly = patches.Polygon(list(zip(self.x, self.y)),
                                alpha=0.5,
