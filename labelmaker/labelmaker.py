@@ -52,6 +52,8 @@ class plotter(object):
         self.threshold = args.threshold
         self.traces = traces
         self.overlaypath = args.compare
+        self.xlim = None
+        self.ylim = None
 
         self.polys = {}
         self.last_removed = None
@@ -75,6 +77,7 @@ class plotter(object):
         self.fig, self.ax = plt.subplots()
         self.ax.imshow(self.traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
         self.fig.canvas.draw()
+        self.xlim, self.ylim = self.ax.get_xlim(), self.ax.get_ylim()
         self.background = self.fig.canvas.copy_from_bbox(self.fig.bbox)
 
         self.line = Line2D(self.x, self.y, ls='--', c='#666666',
@@ -105,9 +108,12 @@ class plotter(object):
             poly.set_visible(x)
 
     def update_background(self):
+        self.xlim, self.ylim = self.ax.get_xlim(), self.ax.get_ylim()
         self.ax.clear()
 
         self.ax.imshow(self.traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
+        self.ax.set_xlim(self.xlim)
+        self.ax.set_ylim(self.ylim)
         self.fig.canvas.draw()
 
         self.background = self.fig.canvas.copy_from_bbox(self.fig.bbox)
@@ -136,6 +142,11 @@ class plotter(object):
         if self.canvas.manager.toolbar._active is not None: return
         if event.inaxes != self.line.axes: return
         if event.button != 1: return
+
+        tool_mode = plt.get_current_fig_manager().toolbar.mode
+        if tool_mode == "zoom rect" or tool_mode == "pan/zoom":
+            self.update_background()
+            return
 
         self.x.append(event.xdata)
         self.y.append(event.ydata)
