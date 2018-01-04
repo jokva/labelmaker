@@ -86,6 +86,7 @@ class plotter(object):
             self.canvas.mpl_connect('button_release_event', self.onrelease)
             self.canvas.mpl_connect('key_press_event', self.complete)
             self.canvas.mpl_connect('pick_event', self.onpick)
+            self.canvas.mpl_connect('resize_event', self.onresize)
 
         if self.overlaypath is not None:
             self.add_overlay(self.overlaypath)
@@ -102,6 +103,18 @@ class plotter(object):
         self.line.set_visible(x)
         for poly in self.polys.keys():
             poly.set_visible(x)
+
+    def update_background(self):
+        self.ax.clear()
+
+        self.ax.imshow(self.traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
+        self.fig.canvas.draw()
+
+        self.background = self.fig.canvas.copy_from_bbox(self.fig.bbox)
+        self.blit()
+
+    def onresize(self, *_):
+        self.update_background()
 
     def blit(self):
         self.fig.canvas.restore_region(self.background)
