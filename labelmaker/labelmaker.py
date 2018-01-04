@@ -133,6 +133,11 @@ class plotter(object):
         self.fig.canvas.flush_events()
 
     def onrelease(self, event):
+        tool_mode = plt.get_current_fig_manager().toolbar.mode
+        if tool_mode == "zoom rect" or tool_mode == "pan/zoom":
+            self.update_background()
+            return
+
         if self.pick is not None:
             if self.current_point:
                 self.move_point(event.xdata, event.ydata)
@@ -142,11 +147,6 @@ class plotter(object):
         if self.canvas.manager.toolbar._active is not None: return
         if event.inaxes != self.line.axes: return
         if event.button != 1: return
-
-        tool_mode = plt.get_current_fig_manager().toolbar.mode
-        if tool_mode == "zoom rect" or tool_mode == "pan/zoom":
-            self.update_background()
-            return
 
         self.x.append(event.xdata)
         self.y.append(event.ydata)
