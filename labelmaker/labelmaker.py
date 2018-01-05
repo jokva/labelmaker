@@ -54,6 +54,9 @@ class plotter(object):
         self.overlaypath = args.compare
         self.xlim = None
         self.ylim = None
+        self.xlim_orig = None
+        self.ylim_orig = None
+        self.background = None
 
         self.polys = {}
         self.last_removed = None
@@ -66,7 +69,8 @@ class plotter(object):
                      'd': self.rmpoly,
                      'u': self.undo,
                      'e': self.export,
-                     'z': self.undo_dot
+                     'z': self.undo_dot,
+                     'h': self.original_view
                      }
 
         for key in range(1,10):
@@ -78,6 +82,7 @@ class plotter(object):
         self.ax.imshow(self.traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
         self.fig.canvas.draw()
         self.xlim, self.ylim = self.ax.get_xlim(), self.ax.get_ylim()
+        self.xlim_orig, self.ylim_orig = self.ax.get_xlim(), self.ax.get_ylim()
         self.background = self.fig.canvas.copy_from_bbox(self.fig.bbox)
 
         self.line = Line2D(self.x, self.y, ls='--', c='#666666',
@@ -122,6 +127,11 @@ class plotter(object):
     def onresize(self, *_):
         self.update_background()
 
+    def original_view(self, *_):
+        self.ax.set_xlim(self.xlim_orig)
+        self.ax.set_ylim(self.ylim_orig)
+        self.update_background()
+
     def blit(self):
         self.fig.canvas.restore_region(self.background)
         self.ax.draw_artist(self.line)
@@ -133,6 +143,11 @@ class plotter(object):
         self.fig.canvas.flush_events()
 
     def onrelease(self, event):
+        tool_mode = plt.get_current_fig_manager().toolbar.mode
+        if tool_mode == "zoom rect" or tool_mode == "pan/zoom":
+            self.update_background()
+            return
+
         if self.pick is not None:
             if self.current_point:
                 self.move_point(event.xdata, event.ydata)
@@ -142,11 +157,6 @@ class plotter(object):
         if self.canvas.manager.toolbar._active is not None: return
         if event.inaxes != self.line.axes: return
         if event.button != 1: return
-
-        tool_mode = plt.get_current_fig_manager().toolbar.mode
-        if tool_mode == "zoom rect" or tool_mode == "pan/zoom":
-            self.update_background()
-            return
 
         self.x.append(event.xdata)
         self.y.append(event.ydata)
