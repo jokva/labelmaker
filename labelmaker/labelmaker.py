@@ -72,6 +72,7 @@ class plotter(object):
                      'u': self.undo,
                      'e': self.export,
                      'z': self.undo_dot,
+                     'i': self.blit,
                      'h': self.original_view
                      }
 
@@ -142,8 +143,9 @@ class plotter(object):
         self.ax.set_ylim(self.ylim_orig)
         self.update_background()
 
-    def blit(self):
+    def blit(self, *_):
         self.fig.canvas.restore_region(self.background)
+
         self.ax.draw_artist(self.line)
 
         for poly in self.polys.keys():
