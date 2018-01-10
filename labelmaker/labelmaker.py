@@ -56,6 +56,8 @@ class plotter(object):
         self.ylim = None
         self.xlim_orig = None
         self.ylim_orig = None
+        self.xlimits = []
+        self.ylimits = []
         self.background = None
         self.x1 = None
         self.y1 = None
@@ -73,6 +75,7 @@ class plotter(object):
                      'e': self.export,
                      'z': self.undo_dot,
                      'i': self.blit,
+                     'm': self.restore_last_view,
                      'h': self.original_view
                      }
 
@@ -142,6 +145,14 @@ class plotter(object):
         self.ax.set_xlim(self.xlim_orig)
         self.ax.set_ylim(self.ylim_orig)
         self.update_background()
+        self.blit()
+
+    def restore_last_view(self, *_):
+        if not self.xlimits: return
+        self.ax.set_xlim(self.xlimits.pop())
+        self.ax.set_ylim(self.ylimits.pop())
+        self.update_background()
+        self.blit()
 
     def blit(self, *_):
         self.fig.canvas.restore_region(self.background)
@@ -157,7 +168,8 @@ class plotter(object):
     def onrelease(self, event):
         tool_mode = plt.get_current_fig_manager().toolbar.mode
         if tool_mode == "zoom rect" or tool_mode == "pan/zoom":
-            xlim_old, ylim_old = self.ax.get_xlim(), self.ax.get_ylim()
+            self.xlimits.append(self.ax.get_xlim())
+            self.ylimits.append(self.ax.get_ylim())
             # for single clicks (i.e. click release, without moving cursor): return (which is the same behavior as matplotlib)
             x, y = event.xdata, event.ydata
             if x == self.x1 or y == self.y1:
@@ -169,8 +181,8 @@ class plotter(object):
             self.update_background()
             # matplotlib will zoom after this call
             # After manually zooming the canvas, restore before zoom to allow matplot do it's own zooming
-            self.ax.set_xlim(xlim_old)
-            self.ax.set_ylim(ylim_old)
+            self.ax.set_xlim(self.xlimits[-1])
+            self.ax.set_ylim(self.ylimits[-1])
             self.fig.canvas.draw()
             return
 
