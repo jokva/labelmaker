@@ -53,6 +53,9 @@ class plotter(object):
         self.traces = traces
         self.overlaypath = args.compare
 
+        self.horizontal = args.horizontal
+        self.vertical = args.vertical
+
         self.polys = {}
         self.last_removed = None
         self.pick = None
@@ -73,7 +76,9 @@ class plotter(object):
     def run(self):
 
         self.fig, self.ax = plt.subplots()
-        self.ax.imshow(self.traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
+        self.ax.imshow(self.traces[::self.horizontal, ::self.vertical].T,
+                       aspect='auto',
+                       cmap=plt.get_cmap(self.args.cmap))
 
         self.line = Line2D(self.x, self.y, ls='--', c='#666666',
                       marker='x', mew=2, mec='#204a87', picker=5)
@@ -232,6 +237,20 @@ def main(argv = None):
                         type=str,
                         default='seismic',
                         help='Set colour map')
+
+    parser.add_argument('-x',
+                        '--horizontal',
+                        '--downsample-horizontal',
+                        type=int,
+                        default=1,
+                        help='Downsample horizontally (keep every n trace)')
+
+    parser.add_argument('-y',
+                        '--vertical',
+                        '--downsample-vertical',
+                        type=int,
+                        default=1,
+                        help='Downsample vertically (keep every n sample)')
 
     args = parser.parse_args(args = argv[1:])
 
