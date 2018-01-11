@@ -41,6 +41,14 @@ Mouse shortcuts:
 ```<u>```      Undo deletion of last polygon. This action will only add the latest
          removed polygon.
 
+```<h>```      Restore to original view.
+
+```<m>```      Restore last view (if the view has been zoomed, restores the
+previous view)
+
+```<i>```      Refresh view. In any case polygons or lines are not updating,
+it is possible to refresh the view.
+
 ```<e>```      Export the results. The Labelmaker creates a new segy file with the
          same headers, text content and dimensions as the input file. The segy
          file contains 0-values for all coordinates outside of any drawn
