@@ -56,7 +56,11 @@ class plotter(object):
         self.ylim = None
         self.xlim_orig = None
         self.ylim_orig = None
+        self.xlimits = []
+        self.ylimits = []
         self.background = None
+        self.x1 = None
+        self.y1 = None
 
         self.polys = {}
         self.last_removed = None
@@ -70,6 +74,8 @@ class plotter(object):
                      'u': self.undo,
                      'e': self.export,
                      'z': self.undo_dot,
+                     'i': self.blit,
+                     'm': self.restore_last_view,
                      'h': self.original_view
                      }
 
@@ -92,6 +98,7 @@ class plotter(object):
         self.canvas = self.line.figure.canvas
         if self.overlaypath is None:
             self.canvas.mpl_connect('button_release_event', self.onrelease)
+            self.canvas.mpl_connect('button_press_event', self.onpress)
             self.canvas.mpl_connect('key_press_event', self.complete)
             self.canvas.mpl_connect('pick_event', self.onpick)
             self.canvas.mpl_connect('resize_event', self.onresize)
@@ -112,13 +119,20 @@ class plotter(object):
         for poly in self.polys.keys():
             poly.set_visible(x)
 
+    def get_zoom_limits(self, event):
+        def minmax(*args): return sorted(args)
+        x2, y2 = event.xdata, event.ydata
+        xlim = minmax(self.x1, x2)
+        ylim = minmax(self.y1, y2)
+        return xlim, ylim
+
     def update_background(self):
-        self.xlim, self.ylim = self.ax.get_xlim(), self.ax.get_ylim()
+        xlim, ylim = self.ax.get_xlim(), self.ax.get_ylim()
         self.ax.clear()
 
         self.ax.imshow(self.traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap))
-        self.ax.set_xlim(self.xlim)
-        self.ax.set_ylim(self.ylim)
+        self.ax.set_xlim(xlim)
+        self.ax.set_ylim(ylim)
         self.fig.canvas.draw()
 
         self.background = self.fig.canvas.copy_from_bbox(self.fig.bbox)
@@ -131,9 +145,18 @@ class plotter(object):
         self.ax.set_xlim(self.xlim_orig)
         self.ax.set_ylim(self.ylim_orig)
         self.update_background()
+        self.blit()
 
-    def blit(self):
+    def restore_last_view(self, *_):
+        if not self.xlimits: return
+        self.ax.set_xlim(self.xlimits.pop())
+        self.ax.set_ylim(self.ylimits.pop())
+        self.update_background()
+        self.blit()
+
+    def blit(self, *_):
         self.fig.canvas.restore_region(self.background)
+
         self.ax.draw_artist(self.line)
 
         for poly in self.polys.keys():
@@ -145,7 +168,22 @@ class plotter(object):
     def onrelease(self, event):
         tool_mode = plt.get_current_fig_manager().toolbar.mode
         if tool_mode == "zoom rect" or tool_mode == "pan/zoom":
+            self.xlimits.append(self.ax.get_xlim())
+            self.ylimits.append(self.ax.get_ylim())
+            # for single clicks (i.e. click release, without moving cursor): return (which is the same behavior as matplotlib)
+            x, y = event.xdata, event.ydata
+            if x == self.x1 or y == self.y1:
+                return
+            # Update the background according to the zoom'ed area
+            xlim, ylim = self.get_zoom_limits(event)
+            self.ax.set_xlim(xlim)
+            self.ax.set_ylim(ylim)
             self.update_background()
+            # matplotlib will zoom after this call
+            # After manually zooming the canvas, restore before zoom to allow matplot do it's own zooming
+            self.ax.set_xlim(self.xlimits[-1])
+            self.ax.set_ylim(self.ylimits[-1])
+            self.fig.canvas.draw()
             return
 
         if self.pick is not None:
@@ -163,6 +201,12 @@ class plotter(object):
 
         self.line.set_data(self.x, self.y)
         self.blit()
+
+    def onpress(self, event):
+        tool_mode = plt.get_current_fig_manager().toolbar.mode
+        if tool_mode == "zoom rect":
+            self.x1, self.y1 = event.xdata, event.ydata
+            return
 
     def clear(self, *_):
         self.x, self.y = [], []
