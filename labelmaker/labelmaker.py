@@ -2,6 +2,7 @@
 
 import argparse
 import numpy as np
+import math
 import segyio
 import sys
 import os
@@ -29,16 +30,38 @@ def export(fname, output, prefix = 'labelmade-'):
             out.trace = output
     print("Wrote", output_path)
 
-def mkoutput(polys, shape):
+def mkoutput(polys, shape, xscale, yscale):
     traces, samples = shape
     output = np.zeros((traces, samples), dtype=np.single).T
-    px, py = np.mgrid[0:samples, 0:traces]
-    points = np.c_[py.ravel(), px.ravel()]
 
-    for poly, cls in polys.items():
-        mask = poly.get_path().contains_points(points)
-        value = cls
-        np.place(output, mask, [value])
+    npoly = len(polys)
+    for i, (poly, cls) in enumerate(polys.items(), 1):
+        print('rendering polygon ({}/{})'.format(i, npoly))
+        xys = poly.get_xy()
+
+        # find the rectangle that covers all of the polygon
+        w, n = xys.min(axis=0)
+        e, s = xys.max(axis=0)
+
+        w, n = int(math.floor(w)), int(math.floor(n))
+        e, s = int(math.ceil(e + 1)), int(math.ceil(s + 1))
+
+        w *= xscale
+        e *= xscale
+        s *= yscale
+        n *= yscale
+
+        xs = list(range(w, e))
+        ys = list(range(n, s))
+        xs1 = np.floor_divide(np.tile(xs, len(ys)), xscale)
+        ys1 = np.floor_divide(np.repeat(ys, len(xs)), yscale)
+        points = np.transpose([xs1, ys1])
+        contains = poly.get_path().contains_points
+        mask = contains(points)
+
+        subout = output[n:s, w:e]
+        np.place(subout, mask, [cls])
+
     return output.T
 
 class plotter(object):
@@ -202,7 +225,7 @@ class plotter(object):
         self.current_point = None
 
     def export(self, *_):
-        data = mkoutput(self.polys, self.traces.shape)
+        data = mkoutput(self.polys, self.traces.shape, self.horizontal, self.vertical)
         export(self.args.input, data, prefix = self.args.prefix)
 
 def main(argv = None):
