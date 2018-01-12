@@ -14,6 +14,7 @@ from matplotlib.lines import Line2D
 from .utility import within_tolerance, axis_lengths, closest
 
 def export(fname, output, prefix = 'labelmade-'):
+    print("writing polygons to file")
     with segyio.open(fname) as f:
         meta = segyio.tools.metadata(f)
         output_path = os.path.join(os.getcwd(), prefix + os.path.basename(fname))
@@ -26,7 +27,7 @@ def export(fname, output, prefix = 'labelmade-'):
             out.bin = f.bin
             out.header = f.header
             out.trace = output
-    print("Wrote", prefix + fname)
+    print("Wrote", output_path)
 
 def mkoutput(polys, shape):
     traces, samples = shape
