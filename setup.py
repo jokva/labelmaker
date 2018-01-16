@@ -16,6 +16,6 @@ setup(name='labelmaker',
     setup_requires=['pytest-runner', 'setuptools>=28', 'setuptools_scm'],
     tests_require=['pytest'],
     test_suite='pytest',
-    install_requires=['matplotlib', 'segyio==1.4b1'],
+    install_requires=['matplotlib', 'segyio>=1.4'],
     platforms='any',
 )
