@@ -6,6 +6,7 @@ import math
 import segyio
 import sys
 import os
+import json
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -13,6 +14,24 @@ from matplotlib import patches
 from matplotlib.lines import Line2D
 
 from .utility import within_tolerance, axis_lengths, closest
+
+def save_polys(fname, polys, x, y,  prefix = 'polys-'):
+    poly_paths = []
+    for poly,cls in polys.items():
+        poly_paths.append({'vertices': poly.get_path().vertices.tolist(),
+                       'poly_class': cls})
+
+    polys_save={'x': x,
+                'y': y,
+                'poly_paths': poly_paths}
+
+    fname = prefix + os.path.splitext(fname)[0] + '.json'
+    output_path = os.path.join(os.getcwd(), fname)
+
+    with open(output_path,'w') as f:
+        json.dump(polys_save, f)
+
+    print("Wrote", output_path)
 
 def export(fname, output, prefix = 'labelmade-'):
     print("writing polygons to file")
@@ -76,6 +95,7 @@ class plotter(object):
         self.threshold = args.threshold
         self.traces = traces
         self.overlaypath = args.compare
+        self.saved_polys_path = args.load
 
         self.horizontal = args.horizontal
         self.vertical = args.vertical
@@ -88,6 +108,7 @@ class plotter(object):
 
         self.keys = {'escape': self.clear,
                      'enter': self.mkpoly,
+                     'p': self.save_polys,
                      'd': self.rmpoly,
                      'u': self.undo,
                      'e': self.export,
@@ -117,7 +138,35 @@ class plotter(object):
         if self.overlaypath is not None:
             self.add_overlay(self.overlaypath)
 
+        if self.saved_polys_path is not None:
+            self.load_polys(self.saved_polys_path)
+
         plt.show()
+
+    def save_polys(self, *_):
+        save_polys(self.args.input, self.polys, self.args.horizontal, self.args.vertical)
+
+    def load_polys(self, path):
+        with open(path, 'r') as f:
+            saved_polys = json.load(f)
+
+        hori, vert = saved_polys['x'], saved_polys['y']
+
+        if (self.horizontal != hori or self.vertical != vert):
+            msg = """Warning: Could not load polys: horizontal downsampling from
+            file (x={}) must equal current horizontal downsampling (x={}),
+            vertical downsampling from file (y={}) must equal current vertical
+            downsamping (y={})""".format(
+            hori, self.horizontal, vert, self.vertical)
+            print(msg)
+            return
+
+        for poly_path in saved_polys['poly_paths']:
+            poly = patches.Polygon(poly_path['vertices'],
+                                   alpha=0.5,
+                                   fc=self.cmap[poly_path['poly_class']-1])
+            self.ax.add_patch(poly)
+            self.polys[poly] = poly_path['poly_class']
 
     def add_overlay(self, path):
         with segyio.open(path) as f:
@@ -275,6 +324,11 @@ def main(argv = None):
                         type=int,
                         default=1,
                         help='Downsample vertically (keep every n sample)')
+
+    parser.add_argument('-l',
+                        '--load',
+                        type=str,
+                        help='Filepath for saved polygons')
 
     args = parser.parse_args(args = argv[1:])
 
