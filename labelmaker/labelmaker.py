@@ -108,12 +108,13 @@ class plotter(object):
 
         self.keys = {'escape': self.clear,
                      'enter': self.mkpoly,
-                     'p': self.save_polys,
+                     'ctrl+p': self.save_polys,
                      'd': self.rmpoly,
                      'u': self.undo,
-                     'e': self.export,
+                     'ctrl+e': self.export,
                      'z': self.undo_dot,
-                     'ctrl+i': self.color_info
+                     'ctrl+i': self.color_info,
+                     'e': self.edit_poly
                      }
 
         for key in range(1,10):
@@ -230,6 +231,27 @@ class plotter(object):
             poly.remove()
             self.last_removed = (poly, self.polys.pop(poly))
             return
+
+    def edit_poly(self, event):
+        if event.inaxes != self.line.axes: return
+
+        if self.x!=[]:
+            print("Complete current path before editing")
+            return
+
+        for poly, cls in self.polys.items():
+            if not poly.contains(event)[0]: continue
+
+            t = poly.get_path().vertices
+            self.current_poly_class = cls
+            self.x = t.T[0].tolist()[:-1]
+            self.y = t.T[1].tolist()[:-1]
+            self.line.set_data(self.x, self.y)
+
+            poly.remove()
+            self.polys.pop(poly)
+            self.canvas.draw()
+            break
 
     def undo(self, *_ ):
         if self.last_removed is None: return
