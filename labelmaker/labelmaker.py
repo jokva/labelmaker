@@ -15,6 +15,42 @@ from matplotlib.lines import Line2D
 
 from .utility import within_tolerance, axis_lengths, closest
 
+def classes(cmap):
+    definitions = [
+        { 'name': '01', 'value': 1,  'hotkey': '1',      'hatch': '',   'color': cmap[0] },
+        { 'name': '02', 'value': 2,  'hotkey': '2',      'hatch': '',   'color': cmap[1] },
+        { 'name': '03', 'value': 3,  'hotkey': '3',      'hatch': '',   'color': cmap[2] },
+        { 'name': '04', 'value': 4,  'hotkey': '4',      'hatch': '',   'color': cmap[3] },
+        { 'name': '05', 'value': 5,  'hotkey': '5',      'hatch': '',   'color': cmap[4] },
+        { 'name': '06', 'value': 6,  'hotkey': '6',      'hatch': '',   'color': cmap[5] },
+        { 'name': '07', 'value': 7,  'hotkey': '7',      'hatch': '',   'color': cmap[6] },
+        { 'name': '08', 'value': 8,  'hotkey': '8',      'hatch': '',   'color': cmap[7] },
+        { 'name': '09', 'value': 9,  'hotkey': '9',      'hatch': '',   'color': cmap[8] },
+
+        { 'name': '10', 'value': 10, 'hotkey': 'ctrl+1', 'hatch': 'xx', 'color': cmap[0] },
+        { 'name': '12', 'value': 12, 'hotkey': 'ctrl+2', 'hatch': 'xx', 'color': cmap[1] },
+        { 'name': '13', 'value': 13, 'hotkey': 'ctrl+3', 'hatch': 'xx', 'color': cmap[2] },
+        { 'name': '14', 'value': 14, 'hotkey': 'ctrl+4', 'hatch': 'xx', 'color': cmap[3] },
+        { 'name': '15', 'value': 15, 'hotkey': 'ctrl+5', 'hatch': 'xx', 'color': cmap[4] },
+        { 'name': '16', 'value': 16, 'hotkey': 'ctrl+6', 'hatch': 'xx', 'color': cmap[5] },
+        { 'name': '17', 'value': 17, 'hotkey': 'ctrl+7', 'hatch': 'xx', 'color': cmap[6] },
+        { 'name': '18', 'value': 18, 'hotkey': 'ctrl+8', 'hatch': 'xx', 'color': cmap[7] },
+        { 'name': '19', 'value': 19, 'hotkey': 'ctrl+9', 'hatch': 'xx', 'color': cmap[8] },
+
+        { 'name': '20', 'value': 20, 'hotkey': 'alt+1',  'hatch': '++', 'color': cmap[0] },
+        { 'name': '21', 'value': 21, 'hotkey': 'alt+2',  'hatch': '++', 'color': cmap[1] },
+        { 'name': '22', 'value': 22, 'hotkey': 'alt+3',  'hatch': '++', 'color': cmap[2] },
+        { 'name': '23', 'value': 23, 'hotkey': 'alt+4',  'hatch': '++', 'color': cmap[3] },
+        { 'name': '24', 'value': 24, 'hotkey': 'alt+5',  'hatch': '++', 'color': cmap[4] },
+        { 'name': '25', 'value': 25, 'hotkey': 'alt+6',  'hatch': '++', 'color': cmap[5] },
+        { 'name': '26', 'value': 26, 'hotkey': 'alt+7',  'hatch': '++', 'color': cmap[6] },
+        { 'name': '27', 'value': 27, 'hotkey': 'alt+8',  'hatch': '++', 'color': cmap[7] },
+        { 'name': '28', 'value': 28, 'hotkey': 'alt+9',  'hatch': '++', 'color': cmap[8] },
+    ]
+
+
+    return definitions
+
 def save_polys(fname, polys, x, y,  prefix = 'polys-'):
     poly_paths = []
     for poly,cls in polys.items():
@@ -104,7 +140,7 @@ class plotter(object):
         self.last_removed = None
         self.pick = None
         self.current_poly_class = 1
-        self.cmap = plt.get_cmap('tab10').colors
+        self.cmap = plt.get_cmap('tab10').colors[:9]
 
         self.keys = {'escape': self.clear,
                      'enter': self.mkpoly,
@@ -117,10 +153,11 @@ class plotter(object):
                      'e': self.edit_poly
                      }
 
-        for key in range(1,10):
-            self.keys[str(key)] = self.set_class
-
     def run(self):
+        self.classes = classes(self.cmap)
+
+        self.hotkeys = {d['hotkey']: d for d in self.classes}
+        self.valclass = {d['value']: d for d in self.classes}
 
         self.fig, self.ax = plt.subplots()
         self.ax.imshow(self.traces[::self.horizontal, ::self.vertical].T,
@@ -149,16 +186,30 @@ class plotter(object):
     def color_info(self,*_):
         with mpl.rc_context({'toolbar':'None'}):
             color_fig, color_ax = plt.subplots(figsize=(2,8))
+            idx = 0
+            modifiers = ['','ctrl+','alt+']
+            for i in range(len(modifiers)):
+                handles = plt.barh(np.arange(9), 1, left = i)
+                for j, handle in enumerate(handles):
+                    col = self.classes[idx]['color']
+                    hatch = self.classes[idx]['hatch']
+                    handle.set_facecolor(col)
+                    handle.set_hatch(hatch)
+                    idx+=1
+            color_ax.set_ylabel('Corresponding color and texture per class')
+            labels = [str(i+1) for i in range(9)]
+            color_ax.set_yticklabels(labels)
+            color_ax.set_yticks(np.arange(0,9))
+            # It is possible to right/left/center align labels around ticks, but
+            # it is not possible to align between ticks.. So remove major ticks
+            # and add minor ticks inbetween with correct labels is a possibility
+            # (in fact it is the suggested implementation in matplotlib documentation)
+            color_ax.set_xticklabels('')
+            ticks = [i+0.5 for i in range(len(modifiers))]
+            color_ax.set_xticks(ticks, minor=True)
+            color_ax.set_xticklabels(modifiers, minor=True)
             plt.tight_layout()
-            inds = np.arange(1,9)
-            handles = plt.barh(inds,1)
-            color_ax.set_ylabel('Corresponding color per class')
-            color_ax.set_yticklabels(inds)
-            color_ax.set_yticks(inds)
-            color_ax.xaxis.set_visible(False)
-            for i, handle in enumerate(handles):
-                handle.set_facecolor(self.cmap[i])
-            plt.show()
+            color_fig.show()
 
     def save_polys(self, *_):
         save_polys(self.args.input, self.polys, self.args.horizontal, self.args.vertical)
@@ -179,9 +230,11 @@ class plotter(object):
             return
 
         for poly_path in saved_polys['poly_paths']:
+            cls = self.valclass[poly_path['poly_class']]
             poly = patches.Polygon(poly_path['vertices'],
                                    alpha=0.5,
-                                   fc=self.cmap[poly_path['poly_class']-1])
+                                   fc=cls['color'],
+                                   hatch=cls['hatch'])
             self.ax.add_patch(poly)
             self.polys[poly] = poly_path['poly_class']
 
@@ -214,10 +267,12 @@ class plotter(object):
 
     def mkpoly(self, *_):
         if len(self.x) == 0: return
+        cls = self.valclass[self.current_poly_class]
 
         poly = patches.Polygon(list(zip(self.x, self.y)),
                                alpha=0.5,
-                               fc=self.cmap[self.current_poly_class-1])
+                               fc=cls['color'],
+                               hatch=cls['hatch'])
         self.ax.add_patch(poly)
 
         self.polys[poly] = self.current_poly_class
@@ -268,8 +323,8 @@ class plotter(object):
         self.canvas.draw()
 
     def set_class(self, event):
-        cls = int(event.key)
-        self.current_poly_class = cls
+        cls = self.hotkeys[event.key]
+        self.current_poly_class = cls['value']
 
         # matplotlib uses numerical keys to set what axis has focus for zoom
         # and navigation emphasis. We always have one axis, and it should
@@ -280,13 +335,17 @@ class plotter(object):
 
         for poly in self.polys.keys():
             if not poly.contains(event)[0]: continue
-            self.polys[poly] = cls
-            poly.set_facecolor(self.cmap[cls-1])
+            self.polys[poly] = cls['value']
+            poly.set_facecolor(cls['color'])
+            poly.set_hatch(cls['hatch'])
+
+        self.canvas.draw()
 
     def complete(self, event):
-        if event.key not in self.keys: return
+        if event.key not in self.keys and event.key not in self.hotkeys: return
 
-        self.keys[event.key](event)
+        if event.key in self.keys: self.keys[event.key](event)
+        if event.key in self.hotkeys: self.set_class(event)
         self.canvas.draw()
 
     def onpick(self, event):
