@@ -8,7 +8,7 @@ import sys
 import os
 import json
 
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import patches
 from matplotlib.lines import Line2D
@@ -112,7 +112,8 @@ class plotter(object):
                      'd': self.rmpoly,
                      'u': self.undo,
                      'e': self.export,
-                     'z': self.undo_dot
+                     'z': self.undo_dot,
+                     'ctrl+i': self.color_info
                      }
 
         for key in range(1,10):
@@ -124,6 +125,7 @@ class plotter(object):
         self.ax.imshow(self.traces[::self.horizontal, ::self.vertical].T,
                        aspect='auto',
                        cmap=plt.get_cmap(self.args.cmap))
+        plt.subplots_adjust(bottom=0.2)
 
         self.line = Line2D(self.x, self.y, ls='--', c='#666666',
                       marker='x', mew=2, mec='#204a87', picker=5)
@@ -142,6 +144,20 @@ class plotter(object):
             self.load_polys(self.saved_polys_path)
 
         plt.show()
+
+    def color_info(self,*_):
+        with mpl.rc_context({'toolbar':'None'}):
+            color_fig, color_ax = plt.subplots(figsize=(2,8))
+            plt.tight_layout()
+            inds = np.arange(1,9)
+            handles = plt.barh(inds,1)
+            color_ax.set_ylabel('Corresponding color per class')
+            color_ax.set_yticklabels(inds)
+            color_ax.set_yticks(inds)
+            color_ax.xaxis.set_visible(False)
+            for i, handle in enumerate(handles):
+                handle.set_facecolor(self.cmap[i])
+            plt.show()
 
     def save_polys(self, *_):
         save_polys(self.args.input, self.polys, self.args.horizontal, self.args.vertical)
