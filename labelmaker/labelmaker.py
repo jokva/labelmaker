@@ -242,7 +242,10 @@ class plotter(object):
         with segyio.open(path) as f:
             traces = f.trace.raw[:]
 
-        self.ax.imshow(traces.T, aspect='auto', cmap=plt.get_cmap(self.args.cmap), alpha=0.5)
+        self.ax.imshow(traces[::self.horizontal, ::self.vertical].T,
+                       aspect='auto',
+                       cmap=plt.get_cmap(self.args.cmap),
+                       alpha=0.5)
 
     def onrelease(self, event):
         if self.pick is not None:
