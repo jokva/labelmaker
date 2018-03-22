@@ -149,6 +149,7 @@ class plotter(object):
                      'u': self.undo,
                      'ctrl+e': self.export,
                      'z': self.undo_dot,
+                     'i': self.print_class_info,
                      'ctrl+i': self.color_info,
                      'e': self.edit_poly
                      }
@@ -183,7 +184,12 @@ class plotter(object):
 
         plt.show()
 
-    def color_info(self,*_):
+    def print_class_info(self, *_):
+        for cls in self.classes:
+            print ('Name: {}, Value: {}, Hotkey: {}'.format(
+                cls['name'], cls['value'], cls['hotkey']))
+
+    def color_info(self, *_):
         with mpl.rc_context({'toolbar':'None'}):
             color_fig, color_ax = plt.subplots(figsize=(2,8))
             idx = 0
