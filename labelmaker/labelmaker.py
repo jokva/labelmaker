@@ -149,6 +149,7 @@ class plotter(object):
                      'u': self.undo,
                      'ctrl+e': self.export,
                      'z': self.undo_dot,
+                     'i': self.print_class_info,
                      'ctrl+i': self.color_info,
                      'e': self.edit_poly
                      }
@@ -183,7 +184,12 @@ class plotter(object):
 
         plt.show()
 
-    def color_info(self,*_):
+    def print_class_info(self, *_):
+        for cls in self.classes:
+            print ('Name: {}, Value: {}, Hotkey: {}'.format(
+                cls['name'], cls['value'], cls['hotkey']))
+
+    def color_info(self, *_):
         with mpl.rc_context({'toolbar':'None'}):
             color_fig, color_ax = plt.subplots(figsize=(2,8))
             idx = 0
@@ -195,8 +201,12 @@ class plotter(object):
                     hatch = self.classes[idx]['hatch']
                     handle.set_facecolor(col)
                     handle.set_hatch(hatch)
+                    color_ax.text(i+0.5,j+0.445,'{}'.format(
+                        self.classes[idx]['value']), ha = 'center')
                     idx+=1
-            color_ax.set_ylabel('Corresponding color and texture per class')
+            color_ax.set_ylabel('Keyboard number')
+            color_ax.set_xlabel('Modifier')
+            color_ax.set_title('Class Appearance')
             labels = [str(i+1) for i in range(9)]
             color_ax.set_yticklabels(labels)
             color_ax.set_yticks(np.arange(0,9))
