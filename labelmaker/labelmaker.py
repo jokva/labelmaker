@@ -195,8 +195,12 @@ class plotter(object):
                     hatch = self.classes[idx]['hatch']
                     handle.set_facecolor(col)
                     handle.set_hatch(hatch)
+                    color_ax.text(i+0.5,j+0.445,'{}'.format(
+                        self.classes[idx]['value']), ha = 'center')
                     idx+=1
-            color_ax.set_ylabel('Corresponding color and texture per class')
+            color_ax.set_ylabel('Keyboard number')
+            color_ax.set_xlabel('Modifier')
+            color_ax.set_title('Class Appearance')
             labels = [str(i+1) for i in range(9)]
             color_ax.set_yticklabels(labels)
             color_ax.set_yticks(np.arange(0,9))
